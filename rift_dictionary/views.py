@@ -1,5 +1,3 @@
-import json
-from os import stat
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,6 +7,9 @@ import requests
 import io
 from rest_framework.parsers import JSONParser
 from rift_dictionary.serializers import WordSerializer
+from rift_dictionary.models import Word
+from rest_framework.decorators import api_view
+import json
 
 
 class DictionaryView(APIView):
@@ -34,3 +35,34 @@ class DictionaryView(APIView):
             response = Response(word_serializer.data)
 
         return response
+
+
+def save_word_from_free_api(word):
+    free_api_word_url = f'https://api.dictionaryapi.dev/api/v2/entries/en/{word}'
+    free_api_response = requests.get(url=free_api_word_url)
+    word_bytes = io.BytesIO(free_api_response.content)
+    json_data = JSONParser().parse(word_bytes)
+    word_serializer = WordSerializer(data=json_data, many=True)
+    if word_serializer.is_valid():
+        word_serializer.save()
+    else:
+        return word_serializer.errors
+
+
+@api_view(['GET'])
+def get_word_list(request):
+    requested_words = list(request.GET.values())
+    words_already_in_database = Word.objects.filter(word__in=requested_words)
+    words_already_in_database_count = words_already_in_database.count()
+    if words_already_in_database_count == len(requested_words):
+        word_serializer = WordSerializer(words_already_in_database, many=True)
+        return Response(word_serializer.data)
+    words_names_in_database = words_already_in_database.values_list(
+        'word', flat=True)
+    words_not_in_database = list(
+        set(requested_words)-set(words_names_in_database))
+    for requested_word in words_not_in_database:
+        save_word_from_free_api(requested_word)
+    word_list_response = Word.objects.filter(word__in=requested_words)
+    word_serializer = WordSerializer(word_list_response, many=True)
+    return Response(word_serializer.data)

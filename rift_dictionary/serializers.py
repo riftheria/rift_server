@@ -6,15 +6,17 @@ from rift_dictionary.models import Word, WordDefinition, WordMeaning
 
 
 class WordDefinitionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
     definition = serializers.CharField(required=False)
     example = serializers.CharField(required=False)
 
     class Meta:
         model = WordDefinition
-        fields = ['definition', 'example']
+        fields = ['id', 'definition', 'example']
 
 
 class WordMeaningSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
     partOfSpeech = serializers.CharField(source='part_of_speech')
     definitions = WordDefinitionSerializer(many=True)
 
@@ -23,7 +25,7 @@ class WordMeaningSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WordMeaning
-        fields = ['partOfSpeech', 'definitions']
+        fields = ['id', 'partOfSpeech', 'definitions']
 
 
 class WordListSerializer(serializers.ListSerializer):

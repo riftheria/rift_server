@@ -9,6 +9,7 @@ RESPONSE = """[{"word":"rift","phonetic":"/ɹɪft/","phonetics":[{"text":"/ɹɪf
 
 django.setup()
 
+
 class WordSerializerTest(TestCase):
     def test_word_id_is_correctly_serialized(self):
         data = io.BytesIO(RESPONSE.encode('utf-8'))
@@ -16,7 +17,7 @@ class WordSerializerTest(TestCase):
         serializer = WordSerializer(data=json_data, many=True)
         is_valid = serializer.is_valid()
         self.assertTrue(is_valid)
-    
+
     def test_word_has_three_meanings(self):
         data = io.BytesIO(RESPONSE.encode('utf-8'))
         json_data = JSONParser().parse(data)
@@ -32,3 +33,14 @@ class WordSerializerTest(TestCase):
         is_valid = serializer.is_valid()
         self.assertTrue(serializer.save())
         self.assertEqual(len(WordDefinition.objects.all()), 6)
+
+    def test_retrieved_words_contains_id_in_all_their_objects(self):
+        word = Word.objects.create(word='word', phonetic='phonetic')
+        meaning = WordMeaning.objects.create(word=word, part_of_speech='Verb')
+        definition = WordDefinition.objects.create(
+            word_meaning=meaning, definition='Def', example='Example')
+
+        word_serializer = WordSerializer(word)
+        data = word_serializer.data
+        self.assertEqual(data['meanings'][0]['id'], 1)
+        self.assertEqual(data['meanings'][0]['definitions'][0]['id'], 1)

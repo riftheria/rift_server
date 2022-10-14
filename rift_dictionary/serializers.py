@@ -1,5 +1,4 @@
 from calendar import leapdays
-from typing_extensions import Required
 from wsgiref import validate
 from rest_framework import serializers
 from rift_dictionary.models import Word, WordDefinition, WordMeaning

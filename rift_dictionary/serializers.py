@@ -5,26 +5,27 @@ from rift_dictionary.models import Word, WordDefinition, WordMeaning
 
 
 class WordDefinitionSerializer(serializers.ModelSerializer):
+    meaningId = serializers.PrimaryKeyRelatedField(
+        queryset=WordMeaning.objects.all(), source='word_meaning.id', required=False)
     id = serializers.IntegerField(required=False)
     definition = serializers.CharField(required=False)
     example = serializers.CharField(required=False)
 
     class Meta:
         model = WordDefinition
-        fields = ['id', 'definition', 'example']
+        fields = ['id', 'definition', 'example', 'meaningId']
 
 
 class WordMeaningSerializer(serializers.ModelSerializer):
+    wordId = serializers.PrimaryKeyRelatedField(
+        queryset=Word.objects.all(), required=False, source='word.word')
     id = serializers.IntegerField(required=False)
     partOfSpeech = serializers.CharField(source='part_of_speech')
     definitions = WordDefinitionSerializer(many=True)
 
-    def create(self, validated_data):
-        return WordMeaning.objects.create(part_of_speech='sop')
-
     class Meta:
         model = WordMeaning
-        fields = ['id', 'partOfSpeech', 'definitions']
+        fields = ['id', 'partOfSpeech', 'definitions', 'wordId']
 
 
 class WordListSerializer(serializers.ListSerializer):
